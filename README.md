@@ -1,10 +1,10 @@
-![](https://github.com/design-rrr/bai/blob/main/icons/icon48.png?raw=true)
+![](https://github.com/design-rrr/bai/blob/chrome/icons/icon48.png?raw=true)
 # Bitcoin Address Inspector
 A browser extension that automatically detects Bitcoin addresses on webpages and displays their balance, UTXO count, total received amount, and transaction count using the mempool.space API.
 
 |Options|In action|
 |---|---|
-|![](https://github.com/design-rrr/bai/blob/main/options.png?raw=true)|![Screenshot](https://github.com/design-rrr/bai/blob/main/screenshot.png?raw=true)|
+|![](https://github.com/design-rrr/bai/blob/chrome/options.png?raw=true)|![Screenshot](https://github.com/design-rrr/bai/blob/chrome/screenshot.png?raw=true)|
 
 ## Features
 
