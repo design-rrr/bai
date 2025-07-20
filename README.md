@@ -1,7 +1,10 @@
-# Bitcoin Address Inspector Firefox Add-on
+![](https://github.com/design-rrr/bai/blob/firefox/icons/icon48.png?raw=true)
+# Bitcoin Address Inspector
+A browser extension that automatically detects Bitcoin addresses on webpages and displays their balance, UTXO count, total received amount, and transaction count using the mempool.space API.
 
-A Firefox add-on that automatically detects Bitcoin addresses on webpages and displays their balance, UTXO count, total received amount, and transaction count using the mempool.space API.
-
+|Options|In action|
+|---|---|
+|![](https://github.com/design-rrr/bai/blob/firefox/options.png?raw=true)|![Screenshot](https://github.com/design-rrr/bai/blob/firefox/screenshot.png?raw=true)|
 ## Features
 
 - **Automatic Detection**: Recognizes all Bitcoin address formats:
