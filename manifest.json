@@ -1,19 +1,21 @@
 {
-  "manifest_version": 3,
+  "manifest_version": 2,
   "name": "Bitcoin Address Inspector",
   "version": "1.0",
   "description": "Detect Bitcoin addresses on webpages and show balance, UTXOs, and transaction info",
+  
   "permissions": [
     "activeTab",
     "contextMenus",
-    "storage"
-  ],
-  "host_permissions": [
+    "storage",
     "https://mempool.space/*"
   ],
+  
   "background": {
-    "service_worker": "background.js"
+    "scripts": ["background.js"],
+    "persistent": false
   },
+  
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
@@ -21,13 +23,22 @@
       "css": ["popup.css"]
     }
   ],
-  "action": {
+  
+  "browser_action": {
     "default_popup": "settings.html",
     "default_title": "Bitcoin Address Inspector Settings"
   },
+  
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
+  },
+  
+  "applications": {
+    "gecko": {
+      "id": "bitcoin-address-inspector@example.com",
+      "strict_min_version": "57.0"
+    }
   }
 }

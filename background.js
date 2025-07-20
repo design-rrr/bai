@@ -1,7 +1,11 @@
-// Background script for Bitcoin Address Inspector
-chrome.runtime.onInstalled.addListener(() => {
+// Background script for Bitcoin Address Inspector (Firefox compatible)
+
+// Cross-browser compatibility
+const browser = chrome || browser;
+
+browser.runtime.onInstalled.addListener(() => {
   // Initialize default settings
-  chrome.storage.sync.set({
+  browser.storage.sync.set({
     enableHover: true,
     enableContextMenu: true,
     hoverDelay: 500,
@@ -11,7 +15,7 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 
   // Create context menu
-  chrome.contextMenus.create({
+  browser.contextMenus.create({
     id: "bitcoin-inspector",
     title: "Check Bitcoin Address Info",
     contexts: ["selection"]
@@ -19,16 +23,19 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 // Handle context menu clicks
-chrome.contextMenus.onClicked.addListener((info, tab) => {
+browser.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "bitcoin-inspector") {
     const selectedText = info.selectionText.trim();
     if (isBitcoinAddress(selectedText)) {
-      chrome.tabs.sendMessage(tab.id, {
+      browser.tabs.sendMessage(tab.id, {
         action: "showAddressInfo",
         address: selectedText,
         x: 0,
         y: 0,
         fromContextMenu: true
+      }).catch(error => {
+        // Handle cases where content script isn't loaded
+        console.warn("Failed to send message to content script:", error);
       });
     }
   }
@@ -47,14 +54,15 @@ function isBitcoinAddress(address) {
 }
 
 // Message handling for settings updates
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "updateContextMenu") {
-    chrome.storage.sync.get(['enableContextMenu'], (result) => {
+    browser.storage.sync.get(['enableContextMenu'], (result) => {
       if (result.enableContextMenu) {
-        chrome.contextMenus.update("bitcoin-inspector", { visible: true });
+        browser.contextMenus.update("bitcoin-inspector", { visible: true });
       } else {
-        chrome.contextMenus.update("bitcoin-inspector", { visible: false });
+        browser.contextMenus.update("bitcoin-inspector", { visible: false });
       }
     });
+    return true; // Keep message channel open for async response
   }
 });

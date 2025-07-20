@@ -1,4 +1,8 @@
-// Settings page JavaScript
+// Settings page JavaScript (Firefox compatible)
+
+// Cross-browser compatibility
+const browser = chrome || window.browser;
+
 document.addEventListener('DOMContentLoaded', function() {
   const settings = {
     enableHover: document.getElementById('enableHover'),
@@ -29,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
   resetButton.addEventListener('click', resetSettings);
   
   function loadSettings() {
-    chrome.storage.sync.get([
+    browser.storage.sync.get([
       'enableHover',
       'enableContextMenu',
       'hoverDelay',
@@ -58,14 +62,16 @@ document.addEventListener('DOMContentLoaded', function() {
       showTotalReceived: settings.showTotalReceived.checked
     };
     
-    chrome.storage.sync.set(settingsData, function() {
+    browser.storage.sync.set(settingsData, function() {
       // Show success message
       saveStatus.textContent = 'Settings saved!';
       saveStatus.className = 'save-status success';
       
       // Update context menu visibility
-      chrome.runtime.sendMessage({
+      browser.runtime.sendMessage({
         action: 'updateContextMenu'
+      }).catch(error => {
+        console.warn('Failed to update context menu:', error);
       });
       
       // Clear status after 3 seconds
@@ -74,14 +80,19 @@ document.addEventListener('DOMContentLoaded', function() {
         saveStatus.className = 'save-status';
       }, 3000);
       
-      // Refresh all tabs to apply changes
-      chrome.tabs.query({}, function(tabs) {
-        tabs.forEach(tab => {
-          chrome.tabs.reload(tab.id, { bypassCache: false }, function() {
-            // Ignore any errors (some tabs may not be reloadable)
+      // Refresh all tabs to apply changes (Firefox approach)
+      if (browser.tabs && browser.tabs.query) {
+        browser.tabs.query({}, function(tabs) {
+          tabs.forEach(tab => {
+            if (tab.url && (tab.url.startsWith('http://') || tab.url.startsWith('https://'))) {
+              browser.tabs.reload(tab.id).catch(error => {
+                // Some tabs may not be reloadable, ignore errors
+                console.debug('Could not reload tab:', tab.url, error);
+              });
+            }
           });
         });
-      });
+      }
     });
   }
   
@@ -95,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
       showTotalReceived: true
     };
     
-    chrome.storage.sync.set(defaultSettings, function() {
+    browser.storage.sync.set(defaultSettings, function() {
       // Update UI to reflect reset settings
       loadSettings();
       
@@ -104,8 +115,10 @@ document.addEventListener('DOMContentLoaded', function() {
       saveStatus.className = 'save-status success';
       
       // Update context menu visibility
-      chrome.runtime.sendMessage({
+      browser.runtime.sendMessage({
         action: 'updateContextMenu'
+      }).catch(error => {
+        console.warn('Failed to update context menu:', error);
       });
       
       // Clear status after 3 seconds
@@ -114,15 +127,19 @@ document.addEventListener('DOMContentLoaded', function() {
         saveStatus.className = 'save-status';
       }, 3000);
       
-      // Refresh all tabs to apply changes
-      chrome.tabs.query({}, function(tabs) {
-        tabs.forEach(tab => {
-          chrome.tabs.reload(tab.id, { bypassCache: false }, function() {
-            // Ignore any errors (some tabs may not be reloadable)
+      // Refresh all tabs to apply changes (Firefox approach)
+      if (browser.tabs && browser.tabs.query) {
+        browser.tabs.query({}, function(tabs) {
+          tabs.forEach(tab => {
+            if (tab.url && (tab.url.startsWith('http://') || tab.url.startsWith('https://'))) {
+              browser.tabs.reload(tab.id).catch(error => {
+                // Some tabs may not be reloadable, ignore errors
+                console.debug('Could not reload tab:', tab.url, error);
+              });
+            }
           });
         });
-      });
+      }
     });
   }
 });
-      

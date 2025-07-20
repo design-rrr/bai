@@ -1,4 +1,8 @@
-// Content script for Bitcoin Address Inspector
+// Content script for Bitcoin Address Inspector (Firefox compatible)
+
+// Cross-browser compatibility
+const browser = chrome || window.browser;
+
 let hoverTimeout;
 let popup = null;
 let settings = {};
@@ -7,7 +11,7 @@ let settings = {};
 loadSettings();
 
 function loadSettings() {
-  chrome.storage.sync.get([
+  browser.storage.sync.get([
     'enableHover',
     'enableContextMenu', 
     'hoverDelay',
@@ -31,7 +35,7 @@ function loadSettings() {
 }
 
 // Listen for settings changes
-chrome.storage.onChanged.addListener((changes, namespace) => {
+browser.storage.onChanged.addListener((changes, namespace) => {
   if (namespace === 'sync') {
     loadSettings();
   }
@@ -73,9 +77,11 @@ function highlightBitcoinAddresses() {
 
     if (hasAddress) {
       const parent = textNode.parentNode;
-      const span = document.createElement('span');
-      span.innerHTML = highlightText(text);
-      parent.replaceChild(span, textNode);
+      if (parent && parent.nodeType === Node.ELEMENT_NODE) {
+        const span = document.createElement('span');
+        span.innerHTML = highlightText(text);
+        parent.replaceChild(span, textNode);
+      }
     }
   });
 }
@@ -114,12 +120,20 @@ document.addEventListener('mouseout', (e) => {
 });
 
 // Message listener for context menu actions
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "showAddressInfo") {
     if (request.fromContextMenu) {
-      const rect = document.getSelection().getRangeAt(0).getBoundingClientRect();
-      showAddressPopup(request.address, rect.left + window.scrollX, rect.bottom + window.scrollY);
+      const selection = document.getSelection();
+      if (selection.rangeCount > 0) {
+        const rect = selection.getRangeAt(0).getBoundingClientRect();
+        showAddressPopup(request.address, rect.left + window.scrollX, rect.bottom + window.scrollY);
+      } else {
+        // Fallback position if selection is not available
+        showAddressPopup(request.address, 100, 100);
+      }
     }
+    sendResponse({success: true});
+    return true; // Keep message channel open
   }
 });
 
@@ -140,9 +154,11 @@ async function showAddressPopup(address, x, y) {
     </div>
   `;
   
-  // Position popup
-  popup.style.left = Math.min(x, window.innerWidth - 320) + 'px';
-  popup.style.top = (y + 10) + 'px';
+  // Position popup with boundary checking
+  const maxX = Math.max(0, window.innerWidth - 320);
+  const maxY = Math.max(0, window.innerHeight - 200);
+  popup.style.left = Math.min(x, maxX) + 'px';
+  popup.style.top = Math.min(y + 10, maxY) + 'px';
   
   document.body.appendChild(popup);
   
@@ -154,39 +170,56 @@ async function showAddressPopup(address, x, y) {
     const data = await fetchAddressData(address);
     displayAddressData(data);
   } catch (error) {
+    console.error('Error fetching address data:', error);
     displayError('Failed to fetch address data');
   }
 }
 
 function hidePopup() {
-  if (popup) {
-    popup.remove();
+  if (popup && popup.parentNode) {
+    popup.parentNode.removeChild(popup);
     popup = null;
   }
 }
 
 async function fetchAddressData(address) {
-  const response = await fetch(`https://mempool.space/api/address/${address}`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch address data');
-  }
-  
-  const data = await response.json();
-  
-  // Fetch UTXO data if enabled
-  let utxos = [];
-  if (settings.showUtxos) {
-    try {
-      const utxoResponse = await fetch(`https://mempool.space/api/address/${address}/utxo`);
-      if (utxoResponse.ok) {
-        utxos = await utxoResponse.json();
+  try {
+    const response = await fetch(`https://mempool.space/api/address/${address}`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
       }
-    } catch (error) {
-      console.warn('Failed to fetch UTXO data:', error);
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
+    
+    const data = await response.json();
+    
+    // Fetch UTXO data if enabled
+    let utxos = [];
+    if (settings.showUtxos) {
+      try {
+        const utxoResponse = await fetch(`https://mempool.space/api/address/${address}/utxo`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        if (utxoResponse.ok) {
+          utxos = await utxoResponse.json();
+        }
+      } catch (error) {
+        console.warn('Failed to fetch UTXO data:', error);
+      }
+    }
+    
+    return { ...data, utxos };
+  } catch (error) {
+    console.error('Network error:', error);
+    throw error;
   }
-  
-  return { ...data, utxos };
 }
 
 function displayAddressData(data) {
@@ -198,9 +231,10 @@ function displayAddressData(data) {
   let html = addressDiv.outerHTML;
   
   if (settings.showBalance) {
+    const balance = data.chain_stats.funded_txo_sum - data.chain_stats.spent_txo_sum;
     html += `<div class="info-row">
       <span class="label">Balance:</span>
-      <span class="value">${formatSatoshis(data.chain_stats.funded_txo_sum - data.chain_stats.spent_txo_sum)} BTC</span>
+      <span class="value">${formatSatoshis(balance)} BTC</span>
     </div>`;
   }
   
@@ -220,7 +254,7 @@ function displayAddressData(data) {
   
   html += `<div class="info-row">
     <span class="label">Transactions:</span>
-    <span class="value">${data.chain_stats.tx_count}</span>
+    <span class="value">${data.chain_stats.tx_count || 0}</span>
   </div>`;
   
   contentDiv.innerHTML = html;
@@ -230,13 +264,19 @@ function displayError(message) {
   if (!popup) return;
   
   const contentDiv = popup.querySelector('.bitcoin-popup-content');
+  const addressText = popup.querySelector('.address-display') ? 
+    popup.querySelector('.address-display').textContent : 'Unknown address';
+  
   contentDiv.innerHTML = `
-    <div class="address-display">${popup.querySelector('.address-display').textContent}</div>
+    <div class="address-display">${addressText}</div>
     <div class="error">${message}</div>
   `;
 }
 
 function formatSatoshis(satoshis) {
+  if (typeof satoshis !== 'number' || isNaN(satoshis)) {
+    return '0.00000000';
+  }
   return (satoshis / 100000000).toFixed(8);
 }
 
@@ -263,7 +303,12 @@ const observer = new MutationObserver((mutations) => {
   }
 });
 
-observer.observe(document.body, {
-  childList: true,
-  subtree: true
-});
+// Start observing after a short delay to ensure DOM is ready
+setTimeout(() => {
+  if (document.body) {
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+  }
+}, 1000);
