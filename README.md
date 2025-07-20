@@ -1,6 +1,10 @@
-# Bitcoin Address Inspector Chrome Extension
+![](https://github.com/design-rrr/bai/blob/main/icons/icon48.png?raw=true)
+# Bitcoin Address Inspector
+A browser extension that automatically detects Bitcoin addresses on webpages and displays their balance, UTXO count, total received amount, and transaction count using the mempool.space API.
 
-A Chrome extension that automatically detects Bitcoin addresses on webpages and displays their balance, UTXO count, total received amount, and transaction count using the mempool.space API.
+|Options|In action|
+|---|---|
+|![](https://github.com/design-rrr/bai/blob/main/options.png?raw=true)|![Screenshot](https://github.com/design-rrr/bai/blob/main/screenshot.png?raw=true)|
 
 ## Features
 
@@ -26,7 +30,7 @@ A Chrome extension that automatically detects Bitcoin addresses on webpages and 
   - Adjust hover delay
   - Choose which information to display
 
-## Installation
+## Chrome Installation
 
 ### Method 1: Developer Mode (Recommended)
 
@@ -92,7 +96,7 @@ This extension uses the free mempool.space API:
 
 - No data is collected or stored remotely
 - Address queries are sent directly to mempool.space
-- Settings are stored locally in Chrome's sync storage
+- Settings are stored locally in browser's sync storage
 - No tracking or analytics
 
 ## Supported Address Formats
@@ -125,7 +129,7 @@ To modify or enhance the extension:
 1. Make changes to the appropriate files
 2. Test in developer mode
 3. Update version number in `manifest.json`
-4. Reload the extension in Chrome
+4. Reload the extension
 
 ## License
 
