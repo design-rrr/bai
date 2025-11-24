@@ -1,4 +1,3 @@
-// Settings page JavaScript
 document.addEventListener('DOMContentLoaded', function() {
   const settings = {
     enableHover: document.getElementById('enableHover'),
@@ -16,6 +15,14 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Load current settings
   loadSettings();
+  
+  // Force disable hover functionality AFTER loadSettings completes
+  function forceDisableHover() {
+    chrome.storage.sync.set({ enableHover: false }, function() {
+      settings.enableHover.checked = false;
+      settings.enableHover.disabled = true;
+    });
+  }
   
   // Update hover delay display
   settings.hoverDelay.addEventListener('input', function() {
@@ -37,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
       'showUtxos',
       'showTotalReceived'
     ], function(result) {
-      settings.enableHover.checked = result.enableHover !== false;
+      settings.enableHover.checked = false; // Force to false
       settings.enableContextMenu.checked = result.enableContextMenu !== false;
       settings.hoverDelay.value = result.hoverDelay || 500;
       settings.showBalance.checked = result.showBalance !== false;
@@ -45,12 +52,16 @@ document.addEventListener('DOMContentLoaded', function() {
       settings.showTotalReceived.checked = result.showTotalReceived !== false;
       
       hoverDelayValue.textContent = settings.hoverDelay.value + 'ms';
+      
+      // Disable the hover checkbox and force save
+      settings.enableHover.disabled = true;
+      forceDisableHover();
     });
   }
   
   function saveSettings() {
     const settingsData = {
-      enableHover: false, // Force it to always be false
+      enableHover: false, // Always force to false
       enableContextMenu: settings.enableContextMenu.checked,
       hoverDelay: parseInt(settings.hoverDelay.value),
       showBalance: settings.showBalance.checked,
@@ -87,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
   function resetSettings() {
     const defaultSettings = {
-      enableHover: false, // Set to false, keep it that way (for now)
+      enableHover: false, // Always false
       enableContextMenu: true,
       hoverDelay: 500,
       showBalance: true,
@@ -125,4 +136,3 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
-      
