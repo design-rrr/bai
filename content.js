@@ -16,7 +16,7 @@ function loadSettings() {
     'showTotalReceived'
   ], (result) => {
     settings = {
-      enableHover: result.enableHover !== false,
+      enableHover: false, // FORCE DISABLED
       enableContextMenu: result.enableContextMenu !== false,
       hoverDelay: result.hoverDelay || 500,
       showBalance: result.showBalance !== false,
@@ -24,9 +24,7 @@ function loadSettings() {
       showTotalReceived: result.showTotalReceived !== false
     };
     
-    if (settings.enableHover) {
-      highlightBitcoinAddresses();
-    }
+    // REMOVED: highlightBitcoinAddresses() - no longer called
   });
 }
 
@@ -44,76 +42,25 @@ const bitcoinAddressRegex = [
   /\bbc1[a-z0-9]{39,59}\b/g // Bech32
 ];
 
+// DISABLED: highlightBitcoinAddresses function - no longer runs
 function highlightBitcoinAddresses() {
-  if (!settings.enableHover) return;
-  
-  const walker = document.createTreeWalker(
-    document.body,
-    NodeFilter.SHOW_TEXT,
-    null,
-    false
-  );
-
-  const textNodes = [];
-  let node;
-  while (node = walker.nextNode()) {
-    textNodes.push(node);
-  }
-
-  textNodes.forEach(textNode => {
-    let text = textNode.textContent;
-    let hasAddress = false;
-
-    bitcoinAddressRegex.forEach(regex => {
-      if (regex.test(text)) {
-        hasAddress = true;
-      }
-      regex.lastIndex = 0; // Reset regex state
-    });
-
-    if (hasAddress) {
-      const parent = textNode.parentNode;
-      const span = document.createElement('span');
-      span.innerHTML = highlightText(text);
-      parent.replaceChild(span, textNode);
-    }
-  });
+  return; // Do nothing
 }
 
 function highlightText(text) {
-  let highlightedText = text;
-  
-  bitcoinAddressRegex.forEach(regex => {
-    highlightedText = highlightedText.replace(regex, (match) => {
-      return `<span class="bitcoin-address" data-address="${match}">${match}</span>`;
-    });
-    regex.lastIndex = 0;
-  });
-  
-  return highlightedText;
+  return text; // Return text unchanged
 }
 
-// Event delegation for hover events
+// DISABLED: Event delegation for hover events - no longer active
 document.addEventListener('mouseover', (e) => {
-  if (!settings.enableHover) return;
-  
-  if (e.target.classList.contains('bitcoin-address')) {
-    const address = e.target.dataset.address;
-    
-    hoverTimeout = setTimeout(() => {
-      showAddressPopup(address, e.pageX, e.pageY);
-    }, settings.hoverDelay);
-  }
+  return; // Do nothing
 });
 
 document.addEventListener('mouseout', (e) => {
-  if (e.target.classList.contains('bitcoin-address')) {
-    clearTimeout(hoverTimeout);
-    hidePopup();
-  }
+  return; // Do nothing
 });
 
-// Message listener for context menu actions
+// Message listener for context menu actions - STILL WORKS
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "showAddressInfo") {
     if (request.fromContextMenu) {
@@ -247,23 +194,5 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Re-scan for addresses when DOM changes
-const observer = new MutationObserver((mutations) => {
-  if (settings.enableHover) {
-    let shouldRescan = false;
-    mutations.forEach((mutation) => {
-      if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-        shouldRescan = true;
-      }
-    });
-    
-    if (shouldRescan) {
-      setTimeout(highlightBitcoinAddresses, 100);
-    }
-  }
-});
-
-observer.observe(document.body, {
-  childList: true,
-  subtree: true
-});
+// DISABLED: MutationObserver - no longer scans for addresses
+// observer removed completely
