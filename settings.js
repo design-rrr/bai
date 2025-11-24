@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
   function saveSettings() {
     const settingsData = {
-      enableHover: settings.enableHover.checked,
+      enableHover: false, // Force it to always be false
       enableContextMenu: settings.enableContextMenu.checked,
       hoverDelay: parseInt(settings.hoverDelay.value),
       showBalance: settings.showBalance.checked,
@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
   function resetSettings() {
     const defaultSettings = {
-      enableHover: true,
+      enableHover: false, // Set to false, keep it that way (for now)
       enableContextMenu: true,
       hoverDelay: 500,
       showBalance: true,
